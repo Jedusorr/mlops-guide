@@ -1,17 +1,14 @@
-# Data used to train the models
-data/raw/
-data/prepared/
-
-# Evaluation results
-evaluation/
-
-# The models
-model/
-
 ## Python
 .venv/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
 
+# For macOS users only
 .DS_Store
+
+
+## DVC
+
+# DVC will add new files after this line
+/model
