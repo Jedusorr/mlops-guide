@@ -1,4 +1,6 @@
 [core]
-    remote = data
+    remote = storage
 ['remote "data"']
     url = gs://mlops-valon-bucket/dvcstore
+['remote "storage"']
+    url = gs://mlops-valon-bucket
