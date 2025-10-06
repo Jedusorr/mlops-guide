@@ -1,5 +1,6 @@
 stages:
   prepare:
+    wdir: .
     cmd: python3.12 src/prepare.py data/raw data/prepared
     deps:
     - data/raw
@@ -10,6 +11,7 @@ stages:
     outs:
     - data/prepared
   train:
+    wdir: .
     cmd: python3.12 src/train.py data/prepared model
     deps:
     - data/prepared
@@ -20,6 +22,7 @@ stages:
     outs:
     - model
   evaluate:
+    wdir: .
     cmd: python3.12 src/evaluate.py model data/prepared
     deps:
     - model
