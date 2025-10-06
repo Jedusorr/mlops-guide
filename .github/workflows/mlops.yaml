@@ -165,7 +165,7 @@ jobs:
           password: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
       - name: Import the BentoML model
         run: |
-          bentoml models delete celestial_bodies_classifier_model:latest || true
+          bentoml models delete celestial_bodies_classifier_model:latest -y || true
           bentoml models import model/celestial_bodies_classifier_model.bentomodel
       - name: Build the BentoML model artifact
         run: bentoml build src
