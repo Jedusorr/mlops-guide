@@ -164,7 +164,9 @@ jobs:
           username: _json_key
           password: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
       - name: Import the BentoML model
-        run: bentoml models import model/celestial_bodies_classifier_model.bentomodel --force
+        run: |
+          bentoml models delete celestial_bodies_classifier_model:latest || true
+          bentoml models import model/celestial_bodies_classifier_model.bentomodel
       - name: Build the BentoML model artifact
         run: bentoml build src
       - name: Containerize and publish the BentoML model artifact Docker image
