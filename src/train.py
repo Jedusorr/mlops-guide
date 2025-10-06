@@ -1,3 +1,4 @@
+import json
 import sys
 from pathlib import Path
 from typing import Tuple
@@ -5,6 +6,8 @@ from typing import Tuple
 import numpy as np
 import tensorflow as tf
 import yaml
+import bentoml
+from PIL.Image import Image
 
 from utils.seed import set_seed
 
@@ -61,6 +64,10 @@ def main() -> None:
     ds_train = tf.data.Dataset.load(str(prepared_dataset_folder / "train"))
     ds_test = tf.data.Dataset.load(str(prepared_dataset_folder / "test"))
 
+    labels = None
+    with open(prepared_dataset_folder / "labels.json") as f:
+        labels = json.load(f)
+
     # Define the model
     model = get_model(image_shape, conv_size, dense_size, output_classes)
     model.compile(
@@ -79,8 +86,53 @@ def main() -> None:
 
     # Save the model
     model_folder.mkdir(parents=True, exist_ok=True)
-    model_path = model_folder / "model.keras"
-    model.save(model_path)
+
+    def preprocess(x: Image):
+        # convert PIL image to tensor
+        x = x.convert('L' if grayscale else 'RGB')
+        x = x.resize(image_size)
+        x = np.array(x)
+        x = x / 255.0
+        # add batch dimension
+        x = np.expand_dims(x, axis=0)
+        return x
+
+    def postprocess(x: Image):
+        return {
+            "prediction": labels[tf.argmax(x, axis=-1).numpy()[0]],
+            "probabilities": {
+                labels[i]: prob
+                for i, prob in enumerate(tf.nn.softmax(x).numpy()[0].tolist())
+            },
+        }
+
+    # Save the model using BentoML to its model store
+    # https://docs.bentoml.com/en/latest/reference/frameworks/keras.html#bentoml.keras.save_model
+    bentoml.keras.save_model(
+        "celestial_bodies_classifier_model",
+        model,
+        include_optimizer=True,
+        custom_objects={
+            "preprocess": preprocess,
+            "postprocess": postprocess,
+        }
+    )
+    
+    # Avant l'export, ajoutez ces lignes de débogage
+    # print(f"DEBUG: model_folder = {model_folder}")
+    # print(f"DEBUG: model_folder type = {type(model_folder)}")
+    # print(f"DEBUG: model_folder absolute = {model_folder.absolute()}")
+
+    export_path = model_folder.absolute() / "celestial_bodies_classifier_model.bentomodel"
+    # print(f"DEBUG: export_path = {export_path}")
+    # print(f"DEBUG: export_path exists = {export_path.parent.exists()}")
+
+    # Export the model from the model store to the local model folder
+    bentoml.models.export_model(
+        "celestial_bodies_classifier_model:latest",
+        str(export_path),
+    )
+    
     # Save the model history
     np.save(model_folder / "history.npy", model.history.history)
 
